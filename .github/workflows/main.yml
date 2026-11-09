@@ -1,0 +1,41 @@
+name: Build Dama IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+
+    steps:
+      - name: Repository laden
+        uses: actions/checkout@v4
+
+      - name: Dama-Projekt entpacken
+        run: |
+          unzip -o Dama-iOS-Project.zip -d dama_project
+
+      - name: iOS App bauen
+        run: |
+          cd dama_project
+          xcodebuild \
+            -project Dama.xcodeproj \
+            -target Dama \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: IPA erstellen
+        run: |
+          cd dama_project
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/Dama.app Payload/
+          zip -r Dama-unsigned.ipa Payload
+
+      - name: IPA bereitstellen
+        uses: actions/upload-artifact@v4
+        with:
+          name: Dama-IPA
+          path: dama_project/Dama-unsigned.ipa
